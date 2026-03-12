@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甘特图生成器</title>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs/dist/pptxgen.bundle.js"></script>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f5f7fa;
+  color: #333;
+}
+
+.header {
+  background: #1a5276;
+  color: #fff;
+  padding: 18px 32px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ── 任务输入区 ── */
+.input-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.input-panel h3 {
+  margin-bottom: 14px;
+  font-size: 16px;
+  color: #1a5276;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #555;
+}
+
+.form-group input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.form-group input:focus {
+  border-color: #1a5276;
+}
+
+.form-group input[type="text"] {
+  width: 200px;
+}
+
+.form-group input[type="month"] {
+  width: 160px;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background .2s, opacity .2s;
+}
+
+.btn-primary {
+  background: #1a5276;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1e6a9c;
+}
+
+.btn-export {
+  background: #27ae60;
+  color: #fff;
+}
+
+.btn-export:hover {
+  background: #2ecc71;
+}
+
+.btn-ppt {
+  background: #e67e22;
+  color: #fff;
+}
+
+.btn-ppt:hover {
+  background: #f39c12;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-edit {
+  background: #f39c12;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-edit:hover {
+  background: #e67e22;
+}
+
+/* ── 任务列表 ── */
+.task-list-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.task-list-panel h3 {
+  margin-bottom: 14px;
+  font-size: 16px;
+  color: #1a5276;
+}
+
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.task-table th {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 13px;
+  color: #888;
+}
+
+.task-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.task-table tr.dragging {
+  opacity: 0.4;
+}
+
+.task-table tr[draggable="true"] {
+  cursor: grab;
+}
+
+.task-table tr[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.task-table tr.drag-over td {
+  border-top: 2px solid #1a5276;
+}
+
+.task-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #bbb;
+  font-size: 16px;
+  user-select: none;
+  padding-right: 6px;
+}
+
+.empty-hint {
+  color: #aaa;
+  font-size: 14px;
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* ── 甘特图区域 ── */
+.gantt-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  overflow-x: auto;
+}
+
+.gantt-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.gantt-panel-header h3 {
+  font-size: 16px;
+  color: #1a5276;
+}
+
+.gantt-wrapper {
+  position: relative;
+  min-height: 100px;
+}
+
+.gantt-chart {
+  position: relative;
+}
+
+/* 时间轴 */
+.gantt-timeline {
+  position: relative;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 0;
+  height: 32px;
+}
+
+.gantt-timeline-label {
+  position: absolute;
+  top: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  white-space: nowrap;
+  line-height: 32px;
+}
+
+/* 任务行 */
+.gantt-rows {
+  position: relative;
+}
+
+.gantt-row {
+  position: relative;
+  height: 50px;
+}
+
+/* 任务条 */
+.gantt-bar {
+  position: absolute;
+  top: 10px;
+  height: 30px;
+  background: #1a5276;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 4px;
+}
+
+.gantt-bar-label-left {
+  position: absolute;
+  top: 10px;
+  height: 30px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+
+.gantt-empty {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* ── 示例按钮 ── */
+.btn-demo {
+  background: #8e44ad;
+  color: #fff;
+  margin-left: 8px;
+}
+
+.btn-demo:hover {
+  background: #9b59b6;
+}
+
+.btn-clear {
+  background: #95a5a6;
+  color: #fff;
+  margin-left: 8px;
+}
+
+.btn-clear:hover {
+  background: #7f8c8d;
+}
+
+.btn-json-export {
+  background: #2980b9;
+  color: #fff;
+  margin-left: 8px;
+}
+
+.btn-json-export:hover {
+  background: #3498db;
+}
+
+.btn-json-import {
+  background: #16a085;
+  color: #fff;
+  margin-left: 8px;
+}
+
+.btn-json-import:hover {
+  background: #1abc9c;
+}
+
+/* ── 编辑模式 ── */
+.editing-row input {
+  padding: 4px 8px;
+  border: 1px solid #1a5276;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.editing-row input[type="text"] {
+  width: 160px;
+}
+
+.editing-row input[type="month"] {
+  width: 140px;
+}
+
+.btn-save {
+  background: #27ae60;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-save:hover {
+  background: #2ecc71;
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-cancel:hover {
+  background: #7f8c8d;
+}
+
+/* ── 左侧标签列 ── */
+.gantt-label-col {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 160px;
+  z-index: 2;
+  background: #fff;
+}
+
+.gantt-label-header {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #888;
+  border-bottom: 1px solid #ccc;
+  background: #fff;
+}
+
+.gantt-label-row {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  border-right: 1px solid #e0e0e0;
+  background: #fff;
+}
+
+.gantt-body {
+  margin-left: 160px;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+  }
+  .form-group input[type="text"],
+  .form-group input[type="date"] {
+    width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="header">甘特图生成器</div>
+
+<div class="container">
+  <!-- 任务输入 -->
+  <div class="input-panel">
+    <h3>添加任务</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>任务名称</label>
+        <input type="text" id="taskName" placeholder="例：需求分析">
+      </div>
+      <div class="form-group">
+        <label>开始月份</label>
+        <input type="month" id="taskStart">
+      </div>
+      <div class="form-group">
+        <label>结束月份</label>
+        <input type="month" id="taskEnd">
+      </div>
+      <button class="btn btn-primary" onclick="addTask()">添加任务</button>
+      <button class="btn btn-demo" onclick="loadDemo()">加载示例</button>
+      <button class="btn btn-clear" onclick="clearAll()">清空</button>
+      <button class="btn btn-json-export" onclick="exportJSON()">导出 JSON</button>
+      <button class="btn btn-json-import" onclick="document.getElementById('jsonFileInput').click()">导入 JSON</button>
+      <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="importJSON(event)">
+    </div>
+  </div>
+
+  <!-- 任务列表 -->
+  <div class="task-list-panel">
+    <h3>任务列表</h3>
+    <div id="taskListContainer"></div>
+  </div>
+
+  <!-- 甘特图 -->
+  <div class="gantt-panel">
+    <div class="gantt-panel-header">
+      <h3>甘特图预览</h3>
+      <button class="btn btn-export" onclick="exportPNG()">导出 PNG</button>
+      <button class="btn btn-ppt" onclick="exportPPT()">导出 PPT</button>
+    </div>
+    <div id="ganttContainer"></div>
+  </div>
+</div>
+
+<script>
+// ── 数据 ──
+let tasks = [];
+let editingId = null;
+let dragSrcIndex = null;
+
+// ── localStorage ──
+const STORAGE_KEY = 'gantt_tasks';
+
+function saveTasks() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function loadTasks() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) tasks = JSON.parse(data);
+  } catch(e) { /* ignore */ }
+}
+
+// ── JSON 导出/导入 ──
+function exportJSON() {
+  if (tasks.length === 0) return alert('暂无任务可导出');
+  const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.download = '甘特图任务.json';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) return alert('JSON 格式不正确');
+      tasks = data.map(t => ({
+        id: t.id || generateId(),
+        name: t.name || '',
+        start: t.start || '',
+        end: t.end || '',
+      }));
+      render();
+    } catch(err) {
+      alert('JSON 解析失败：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ── 工具函数 ──
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// 解析 YYYY-MM 为月初
+function parseMonth(str) {
+  const parts = str.split('-');
+  return new Date(+parts[0], +parts[1] - 1, 1);
+}
+
+// 解析 YYYY-MM 为月中（15号），用于条形定位
+function parseMidMonth(str) {
+  const parts = str.split('-');
+  return new Date(+parts[0], +parts[1] - 1, 15);
+}
+
+function formatMonth(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function firstDayOfMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function addMonths(d, n) {
+  return new Date(d.getFullYear(), d.getMonth() + n, 1);
+}
+
+function monthLabel(d) {
+  return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+}
+
+function displayMonth(str) {
+  const parts = str.split('-');
+  return `${parts[0]}年${parseInt(parts[1])}月`;
+}
+
+// ── 添加任务 ──
+function addTask() {
+  const name = document.getElementById('taskName').value.trim();
+  const start = document.getElementById('taskStart').value;
+  const end = document.getElementById('taskEnd').value;
+
+  if (!name) return alert('请输入任务名称');
+  if (!start) return alert('请选择开始月份');
+  if (!end) return alert('请选择结束月份');
+  if (start > end) return alert('结束月份不能早于开始月份');
+
+  tasks.push({ id: generateId(), name, start, end });
+  document.getElementById('taskName').value = '';
+  document.getElementById('taskStart').value = '';
+  document.getElementById('taskEnd').value = '';
+  render();
+}
+
+// ── 删除任务 ──
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+}
+
+// ── 编辑任务 ──
+function startEdit(id) {
+  editingId = id;
+  render();
+}
+
+function saveEdit(id) {
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  const name = row.querySelector('.edit-name').value.trim();
+  const start = row.querySelector('.edit-start').value;
+  const end = row.querySelector('.edit-end').value;
+
+  if (!name || !start || !end) return alert('请填写完整信息');
+  if (start > end) return alert('结束月份不能早于开始月份');
+
+  const task = tasks.find(t => t.id === id);
+  task.name = name;
+  task.start = start;
+  task.end = end;
+  editingId = null;
+  render();
+}
+
+function cancelEdit() {
+  editingId = null;
+  render();
+}
+
+// ── 拖拽排序 ──
+function handleDragStart(e, index) {
+  dragSrcIndex = index;
+  e.target.closest('tr').classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e, index) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const rows = document.querySelectorAll('.task-table tbody tr');
+  rows.forEach(r => r.classList.remove('drag-over'));
+  rows[index].classList.add('drag-over');
+}
+
+function handleDrop(e, index) {
+  e.preventDefault();
+  if (dragSrcIndex === null || dragSrcIndex === index) return;
+  const moved = tasks.splice(dragSrcIndex, 1)[0];
+  tasks.splice(index, 0, moved);
+  dragSrcIndex = null;
+  render();
+}
+
+function handleDragEnd() {
+  dragSrcIndex = null;
+  document.querySelectorAll('.task-table tbody tr').forEach(r => {
+    r.classList.remove('dragging', 'drag-over');
+  });
+}
+
+// ── 加载示例 ──
+function loadDemo() {
+  tasks = [
+    { id: generateId(), name: '需求调研与分析', start: '2025-07', end: '2025-08' },
+    { id: generateId(), name: '系统架构设计', start: '2025-08', end: '2025-09' },
+    { id: generateId(), name: '前端开发', start: '2025-09', end: '2025-11' },
+    { id: generateId(), name: '后端开发', start: '2025-09', end: '2025-12' },
+    { id: generateId(), name: '测试与QA', start: '2025-11', end: '2026-01' },
+    { id: generateId(), name: '部署与上线', start: '2026-01', end: '2026-02' },
+    { id: generateId(), name: '运维保障', start: '2026-02', end: '2026-03' },
+  ];
+  render();
+}
+
+function clearAll() {
+  tasks = [];
+  editingId = null;
+  render();
+}
+
+// ── 渲染 ──
+function render() {
+  saveTasks();
+  renderTaskList();
+  renderGantt();
+}
+
+// ── 渲染任务列表 ──
+function renderTaskList() {
+  const container = document.getElementById('taskListContainer');
+
+  if (tasks.length === 0) {
+    container.innerHTML = '<div class="empty-hint">暂无任务，请添加任务或加载示例</div>';
+    return;
+  }
+
+  let html = `<table class="task-table">
+    <thead><tr><th style="width:40px"></th><th>任务名称</th><th>开始月份</th><th>结束月份</th><th>操作</th></tr></thead>
+    <tbody>`;
+
+  tasks.forEach((t, i) => {
+    if (editingId === t.id) {
+      html += `<tr data-id="${t.id}" class="editing-row">
+        <td></td>
+        <td><input type="text" class="edit-name" value="${escapeHtml(t.name)}"></td>
+        <td><input type="month" class="edit-start" value="${t.start}"></td>
+        <td><input type="month" class="edit-end" value="${t.end}"></td>
+        <td class="task-actions">
+          <button class="btn btn-save" onclick="saveEdit('${t.id}')">保存</button>
+          <button class="btn btn-cancel" onclick="cancelEdit()">取消</button>
+        </td></tr>`;
+    } else {
+      html += `<tr data-id="${t.id}" draggable="true"
+        ondragstart="handleDragStart(event,${i})"
+        ondragover="handleDragOver(event,${i})"
+        ondrop="handleDrop(event,${i})"
+        ondragend="handleDragEnd()">
+        <td><span class="drag-handle">☰</span></td>
+        <td>${escapeHtml(t.name)}</td>
+        <td>${displayMonth(t.start)}</td>
+        <td>${displayMonth(t.end)}</td>
+        <td class="task-actions">
+          <button class="btn btn-edit" onclick="startEdit('${t.id}')">编辑</button>
+          <button class="btn btn-danger" onclick="deleteTask('${t.id}')">删除</button>
+        </td></tr>`;
+    }
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ── 渲染甘特图 ──
+function renderGantt() {
+  const container = document.getElementById('ganttContainer');
+
+  if (tasks.length === 0) {
+    container.innerHTML = '<div class="gantt-empty">添加任务后将在此处显示甘特图</div>';
+    return;
+  }
+
+  // 计算时间范围
+  let minDate = parseMonth(tasks[0].start);
+  let maxDate = parseMonth(tasks[0].end);
+  tasks.forEach(t => {
+    const s = parseMonth(t.start);
+    const e = parseMonth(t.end);
+    if (s < minDate) minDate = s;
+    if (e > maxDate) maxDate = e;
+  });
+
+  // 扩展到月初和月末
+  const rangeStart = firstDayOfMonth(minDate);
+  const rangeEnd = addMonths(firstDayOfMonth(maxDate), 1);
+  const totalDays = daysBetween(rangeStart, rangeEnd);
+
+  // 月份列表
+  const months = [];
+  let cursor = new Date(rangeStart);
+  while (cursor < rangeEnd) {
+    const next = addMonths(cursor, 1);
+    months.push({
+      label: monthLabel(cursor),
+      start: new Date(cursor),
+      end: next,
+      days: daysBetween(cursor, next),
+    });
+    cursor = next;
+  }
+
+  const LABEL_WIDTH = 160;
+  const TARGET_WIDTH = 900;
+  const DAY_WIDTH = TARGET_WIDTH / totalDays;
+  const CHART_WIDTH = TARGET_WIDTH;
+  const ROW_HEIGHT = 50;
+  const TIMELINE_HEIGHT = 40;
+
+  // 构建 DOM
+  let html = '<div class="gantt-chart" style="position:relative;">';
+
+  // 左侧标签列
+  html += `<div class="gantt-label-col" style="width:${LABEL_WIDTH}px;">`;
+  html += '<div class="gantt-label-header">任务名称</div>';
+  tasks.forEach(t => {
+    html += `<div class="gantt-label-row">${escapeHtml(t.name)}</div>`;
+  });
+  html += '</div>';
+
+  // 右侧图表区
+  html += `<div class="gantt-body" style="margin-left:${LABEL_WIDTH}px;">`;
+  html += `<div style="width:${CHART_WIDTH}px; min-width:100%;">`;
+
+  // 时间轴
+  // 收集所有任务的起止月份作为需要显示标签的月份
+  const visibleMonthKeys = new Set();
+  tasks.forEach(t => {
+    visibleMonthKeys.add(t.start);
+    visibleMonthKeys.add(t.end);
+  });
+  html += `<div class="gantt-timeline" style="width:${CHART_WIDTH}px;">`;
+  months.forEach(m => {
+    const key = m.start.getFullYear() + '-' + String(m.start.getMonth() + 1).padStart(2, '0');
+    if (visibleMonthKeys.has(key)) {
+      // 标签居中于该月中间（15号位置）
+      const midMonth = new Date(m.start.getFullYear(), m.start.getMonth(), 15);
+      const offset = daysBetween(rangeStart, midMonth) * DAY_WIDTH;
+      html += `<div class="gantt-timeline-label" style="left:${offset}px; transform:translateX(-50%);">${m.label}</div>`;
+    }
+  });
+  html += '</div>';
+
+  // 任务行
+  html += `<div class="gantt-rows" style="width:${CHART_WIDTH}px; position:relative;">`;
+
+  // 任务条
+  tasks.forEach((t, i) => {
+    const s = parseMidMonth(t.start);
+    const e = parseMidMonth(t.end);
+    const left = daysBetween(rangeStart, s) * DAY_WIDTH;
+    const width = Math.max(4, daysBetween(s, e) * DAY_WIDTH);
+    const top = i * ROW_HEIGHT;
+
+    html += `<div class="gantt-row" style="height:${ROW_HEIGHT}px;"></div>`;
+    html += `<div class="gantt-bar" style="left:${left}px; width:${width}px; top:${top + 10}px;">${escapeHtml(t.name)}</div>`;
+  });
+
+  html += '</div>'; // rows
+  html += '</div>'; // inner width
+  html += '</div>'; // gantt-body
+  html += '</div>'; // gantt-chart
+
+  container.innerHTML = html;
+}
+
+// ── 导出 PNG ──
+function exportPNG() {
+  if (tasks.length === 0) return alert('请先添加任务');
+
+  // 计算时间范围
+  let minDate = parseMonth(tasks[0].start);
+  let maxDate = parseMonth(tasks[0].end);
+  tasks.forEach(t => {
+    const s = parseMonth(t.start);
+    const e = parseMonth(t.end);
+    if (s < minDate) minDate = s;
+    if (e > maxDate) maxDate = e;
+  });
+
+  const rangeStart = firstDayOfMonth(minDate);
+  const rangeEnd = addMonths(firstDayOfMonth(maxDate), 1);
+  const totalDays = daysBetween(rangeStart, rangeEnd);
+
+  const months = [];
+  let cursor = new Date(rangeStart);
+  while (cursor < rangeEnd) {
+    const next = addMonths(cursor, 1);
+    months.push({
+      label: monthLabel(cursor),
+      start: new Date(cursor),
+      end: next,
+      days: daysBetween(cursor, next),
+    });
+    cursor = next;
+  }
+
+  const LABEL_WIDTH = 180;
+  const TARGET_EXPORT_WIDTH = 900;
+  const DAY_WIDTH = TARGET_EXPORT_WIDTH / totalDays;
+  const CHART_WIDTH = TARGET_EXPORT_WIDTH;
+  const ROW_HEIGHT = 50;
+  const TIMELINE_HEIGHT = 44;
+  const PADDING = 24;
+  const CANVAS_WIDTH = LABEL_WIDTH + CHART_WIDTH + PADDING * 2;
+  const CANVAS_HEIGHT = TIMELINE_HEIGHT + tasks.length * ROW_HEIGHT + PADDING * 2;
+
+  const dpr = window.devicePixelRatio || 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = CANVAS_WIDTH * dpr;
+  canvas.height = CANVAS_HEIGHT * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // 背景
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  const offsetY = PADDING;
+  const chartX = PADDING + LABEL_WIDTH;
+
+  // 时间轴背景
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, offsetY, CANVAS_WIDTH, TIMELINE_HEIGHT);
+
+  // 时间轴文字 — 只在任务起止月份位置显示标签
+  const visibleMonthKeysExport = new Set();
+  tasks.forEach(t => {
+    visibleMonthKeysExport.add(t.start);
+    visibleMonthKeysExport.add(t.end);
+  });
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  months.forEach(m => {
+    const key = m.start.getFullYear() + '-' + String(m.start.getMonth() + 1).padStart(2, '0');
+    if (visibleMonthKeysExport.has(key)) {
+      const midMonth = new Date(m.start.getFullYear(), m.start.getMonth(), 15);
+      const offset = daysBetween(rangeStart, midMonth) * DAY_WIDTH;
+      ctx.fillText(m.label, chartX + offset, offsetY + TIMELINE_HEIGHT / 2);
+    }
+  });
+
+  // 时间轴底线
+  ctx.strokeStyle = '#ccc';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(chartX, offsetY + TIMELINE_HEIGHT);
+  ctx.lineTo(chartX + CHART_WIDTH, offsetY + TIMELINE_HEIGHT);
+  ctx.stroke();
+
+  const rowsY = offsetY + TIMELINE_HEIGHT;
+
+  // 白色行背景
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, rowsY, CANVAS_WIDTH, tasks.length * ROW_HEIGHT);
+
+  // 左侧标签
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '600 13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+
+  ctx.fillStyle = '#333';
+  tasks.forEach((t, i) => {
+    const y = rowsY + i * ROW_HEIGHT;
+    ctx.fillText(t.name, PADDING + 8, y + ROW_HEIGHT / 2);
+  });
+
+  // 任务条
+  tasks.forEach((t, i) => {
+    const s = parseMidMonth(t.start);
+    const e = parseMidMonth(t.end);
+    const left = daysBetween(rangeStart, s) * DAY_WIDTH;
+    const width = Math.max(4, daysBetween(s, e) * DAY_WIDTH);
+    const y = rowsY + i * ROW_HEIGHT + 10;
+    const barH = 30;
+
+    // 条形
+    ctx.fillStyle = '#1a5276';
+    roundRect(ctx, chartX + left, y, width, barH, 4);
+    ctx.fill();
+
+    // 文字
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 11px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const textWidth = ctx.measureText(t.name).width;
+    if (textWidth < width - 16) {
+      ctx.fillText(t.name, chartX + left + width / 2, y + barH / 2);
+    }
+  });
+
+  // 下载
+  const link = document.createElement('a');
+  link.download = '甘特图.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ── 导出 PPT ──
+function exportPPT() {
+  if (tasks.length === 0) return alert('请先添加任务');
+  if (typeof PptxGenJS === 'undefined') return alert('PPT 库加载失败，请检查网络连接');
+
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5 inches
+
+  const SLIDE_W = 13.33;
+  const SLIDE_H = 7.5;
+  const MARGIN_L = 0.5;
+  const MARGIN_R = 0.5;
+  const MARGIN_T = 0.8;
+  const TIMELINE_Y = MARGIN_T;
+  const TIMELINE_H = 0.4;
+  const ROWS_Y = TIMELINE_Y + TIMELINE_H + 0.15;
+  const ROW_H = 0.55;
+  const BAR_H = 0.35;
+  const CHART_W = SLIDE_W - MARGIN_L - MARGIN_R;
+
+  // 计算时间范围
+  let minDate = parseMonth(tasks[0].start);
+  let maxDate = parseMonth(tasks[0].end);
+  tasks.forEach(t => {
+    const s = parseMonth(t.start);
+    const e = parseMonth(t.end);
+    if (s < minDate) minDate = s;
+    if (e > maxDate) maxDate = e;
+  });
+  const rangeStart = firstDayOfMonth(minDate);
+  const rangeEnd = addMonths(firstDayOfMonth(maxDate), 1);
+  const totalDays = daysBetween(rangeStart, rangeEnd);
+  const dayW = CHART_W / totalDays; // inches per day
+
+  // 月份列表
+  const months = [];
+  let cursor = new Date(rangeStart);
+  while (cursor < rangeEnd) {
+    const next = addMonths(cursor, 1);
+    months.push({
+      label: monthLabel(cursor),
+      start: new Date(cursor),
+      end: next,
+      days: daysBetween(cursor, next),
+    });
+    cursor = next;
+  }
+
+  // 可见月份
+  const visibleKeys = new Set();
+  tasks.forEach(t => {
+    visibleKeys.add(t.start);
+    visibleKeys.add(t.end);
+  });
+
+  const slide = pptx.addSlide();
+
+  // 标题
+  slide.addText('项目甘特图', {
+    x: MARGIN_L, y: 0.15, w: CHART_W, h: 0.5,
+    fontSize: 22, bold: true, color: '1a5276',
+  });
+
+  // 时间轴底线
+  slide.addShape(pptx.ShapeType.line, {
+    x: MARGIN_L, y: TIMELINE_Y + TIMELINE_H,
+    w: CHART_W, h: 0,
+    line: { color: 'CCCCCC', width: 1 },
+  });
+
+  // 时间轴标签
+  months.forEach(m => {
+    const key = m.start.getFullYear() + '-' + String(m.start.getMonth() + 1).padStart(2, '0');
+    if (visibleKeys.has(key)) {
+      const midMonth = new Date(m.start.getFullYear(), m.start.getMonth(), 15);
+      const offsetDays = daysBetween(rangeStart, midMonth);
+      const cx = MARGIN_L + offsetDays * dayW;
+      // 标签宽度约1.2英寸，居中
+      const labelW = 1.2;
+      slide.addText(m.label, {
+        x: cx - labelW / 2, y: TIMELINE_Y, w: labelW, h: TIMELINE_H,
+        fontSize: 11, bold: true, color: '333333',
+        align: 'center', valign: 'middle',
+      });
+    }
+  });
+
+  // 任务条 — 每个都是可编辑的矩形+文字
+  tasks.forEach((t, i) => {
+    const s = parseMidMonth(t.start);
+    const e = parseMidMonth(t.end);
+    const leftDays = daysBetween(rangeStart, s);
+    const widthDays = daysBetween(s, e);
+
+    const barX = MARGIN_L + leftDays * dayW;
+    const barW = Math.max(0.3, widthDays * dayW);
+    const barY = ROWS_Y + i * ROW_H + (ROW_H - BAR_H) / 2;
+
+    slide.addText(t.name, {
+      shape: pptx.ShapeType.roundRect,
+      x: barX, y: barY, w: barW, h: BAR_H,
+      fill: { color: '1a5276' },
+      color: 'FFFFFF',
+      fontSize: 10, bold: true,
+      align: 'center', valign: 'middle',
+      rectRadius: 0.05,
+    });
+  });
+
+  pptx.writeFile({ fileName: '甘特图.pptx' });
+}
+
+// 初始化
+loadTasks();
+render();
+
+// 点击 month input 任意位置打开选择器
+document.addEventListener('click', function(e) {
+  if (e.target.matches('input[type="month"]')) {
+    e.target.showPicker && e.target.showPicker();
+  }
+});
+
+// 点击开始月份时，自动填入上一个任务结束月份的下一个月
+document.getElementById('taskStart').addEventListener('focus', function() {
+  if (this.value) return;
+  if (tasks.length === 0) return;
+  const lastEnd = tasks[tasks.length - 1].end;
+  const d = parseMonth(lastEnd);
+  const next = addMonths(d, 1);
+  this.value = formatMonth(next);
+});
+
+// 点击结束月份时，自动设最小值为开始月份
+document.getElementById('taskEnd').addEventListener('focus', function() {
+  const startVal = document.getElementById('taskStart').value;
+  if (startVal) {
+    this.min = startVal;
+    if (!this.value) this.value = startVal;
+  }
+});
+</script>
+</body>
+</html>
